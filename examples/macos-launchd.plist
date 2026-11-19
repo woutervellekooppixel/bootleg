@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Starts Photowatch at login and restarts it when it stops.
+  Replace /Users/YOU/photowatch with the folder you cloned Photowatch into, and the node
+  path with the output of `which node`. Run `npm start` once first, so the data folder exists.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>local.photowatch</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/opt/homebrew/bin/node</string>
+		<string>--import</string>
+		<string>tsx</string>
+		<string>src/server.ts</string>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>/Users/YOU/photowatch</string>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>StandardOutPath</key>
+	<string>/Users/YOU/photowatch/data/photowatch.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/YOU/photowatch/data/photowatch.log</string>
+</dict>
+</plist>

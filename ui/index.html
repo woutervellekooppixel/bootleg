@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-title" content="Photowatch">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Photowatch</title>
+<style>
+  /* Always dark, no colour: statuses differ by weight and border, not by hue. */
+  :root { --bg: #0a0a0a; --fg: #fafafa; --muted: #a3a3a3; --faint: #525252; --line: #262626; --soft: #171717; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  /* Header: wordmark and status, the tabs below. */
+  header { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
+  .bar { display: flex; align-items: center; gap: 16px; padding: 16px 24px 6px; }
+  .logo { font-size: 20px; letter-spacing: -.02em; display: flex; align-items: baseline; text-decoration: none; }
+  .logo b { font-weight: 800; }
+  .logo span { font-weight: 300; opacity: .9; }
+  .spacer { flex: 1; }
+  .status { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .tabs { display: flex; gap: 16px; padding: 0 8px; margin-bottom: -1px; }
+  .tabs a { padding: 8px 16px; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 500; color: var(--muted); text-decoration: none; white-space: nowrap; transition: color .15s, border-color .15s; }
+  .tabs a:hover { color: var(--fg); }
+  .tabs a.on { border-bottom-color: var(--fg); color: var(--fg); }
+  .tabs .n { margin-left: 6px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .show-sm { display: none; }
+  .bar .only-review { display: none; }
+  body.reviewing .bar .only-review { display: inline-block; }
+  body.reviewing .tabs, body.reviewing .scan { display: none; }
+
+  .btn { font: inherit; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block;
+    border: 1px solid var(--fg); border-radius: 6px; padding: 9px 14px; background: transparent; color: var(--fg); white-space: nowrap; transition: background .15s, color .15s; }
+  .btn.solid { background: var(--fg); color: var(--bg); }
+  .btn.ghost { border-color: var(--line); }
+  .btn[disabled] { opacity: .35; cursor: default; pointer-events: none; }
+  @media (hover: hover) {
+    .btn:hover { background: var(--fg); color: var(--bg); }
+    .btn.solid:hover { opacity: .85; }
+    .btn.ghost:hover { border-color: var(--fg); background: transparent; color: var(--fg); }
+  }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+  .hero { padding: 40px 0 32px; }
+  .hero .label { margin-bottom: 12px; }
+  .headline { overflow-wrap: anywhere; font-size: clamp(26px, 4vw, 40px); font-weight: 600; letter-spacing: -.025em; line-height: 1.15; margin: 0; max-width: 900px; }
+  .briefing { color: var(--muted); max-width: 760px; margin: 14px 0 0; }
+  .go { margin-top: 24px; padding: 13px 22px; font-size: 12px; }
+  .page { padding-top: 28px; padding-bottom: 80px; }
+
+  /* List rows. */
+  .list { border-top: 1px solid var(--fg); margin-bottom: 80px; }
+  .group { margin-bottom: 36px; }
+  .group-head { display: flex; align-items: baseline; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--fg); }
+  .group-head .n { font-size: 11px; color: var(--muted); letter-spacing: .1em; }
+  .group-head h2 { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+  .row { display: flex; align-items: center; gap: 14px; padding: 12px 2px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  @media (hover: hover) { .row:hover .title { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; } }
+  .thumbs { flex: none; display: flex; gap: 4px; }
+  .thumb { flex: none; width: 44px; height: 44px; object-fit: cover; border-radius: 4px; background: var(--soft); display: block; }
+  .body { flex: 1; min-width: 0; }
+  .title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sub { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tags { display: flex; gap: 6px; align-items: center; flex: none; }
+  .tag { font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 2px 6px; white-space: nowrap; }
+  .tag.urgent { color: var(--bg); background: var(--fg); border-color: var(--fg); }
+  .tag.strong { color: var(--fg); border-color: var(--fg); }
+  .tags .btn { padding: 4px 9px; font-size: 10px; }
+  .date { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 84px; text-align: right; }
+  .empty { color: var(--muted); padding: 14px 2px; font-size: 14px; }
+  .more-rows { margin: 18px 0 0; }
+
+  form.add { display: flex; gap: 10px; align-items: center; padding: 12px 2px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+  form.add input { font: inherit; color: var(--fg); background: transparent; border: 0; outline: none; padding: 2px 0; flex: 1; min-width: 0; }
+  form.add input::placeholder { color: var(--faint); }
+  form.add .plus { width: 18px; text-align: center; color: var(--faint); font-size: 16px; line-height: 1; }
+  form.add .btn { padding: 6px 10px; font-size: 10px; }
+  .count { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+
+  /* Status and Settings: blocks with a heading and rows. */
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; }
+  .block { margin-bottom: 32px; }
+  .block h3 { margin: 0 0 4px; font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; padding-bottom: 10px; border-bottom: 1px solid var(--fg); display: flex; gap: 12px; }
+  .block h3 small { margin-left: auto; font-weight: 500; color: var(--muted); letter-spacing: .1em; text-align: right; }
+  .ev { display: grid; grid-template-columns: 58px 1fr; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .ev > div { min-width: 0; }
+  .ev .t { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); padding-top: 1px; }
+  .ev .loc { font-size: 12px; color: var(--muted); }
+  .yr { display: grid; grid-template-columns: 58px 1fr 92px; gap: 14px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .yr .y { color: var(--muted); }
+  .yr.recent .y { color: var(--fg); font-weight: 600; }
+  .track { height: 4px; background: var(--soft); border-radius: 2px; overflow: hidden; }
+  .track i { display: block; height: 100%; background: var(--fg); }
+  .yr .c { color: var(--muted); text-align: right; }
+  .row-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .hint { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
+
+  /* Settings. */
+  .field { font: inherit; font-size: 14px; color: var(--fg); background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 3px 0; outline: none; width: 100%; min-width: 0; }
+  .field:focus { border-bottom-color: var(--fg); }
+  .field.short { width: 92px; flex: none; }
+  .field::placeholder { color: var(--faint); }
+  textarea.field { display: block; border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; min-height: 300px; resize: vertical; font-size: 13px; line-height: 1.5; margin-bottom: 6px; }
+  textarea.field:focus { border-color: var(--fg); }
+  .inline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+  .seg { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+  .seg .btn { padding: 7px 12px; font-size: 10px; }
+  .fpath { font-weight: 500; overflow-wrap: anywhere; }
+  .folder { margin-bottom: 6px; }
+  .folder .row-btns { margin-top: 8px; }
+  .folder .row-btns .btn { padding: 5px 10px; font-size: 10px; }
+  .sub-row { display: grid; grid-template-columns: minmax(0, 1fr) 96px 64px 76px; gap: 14px; align-items: center; padding: 7px 0 7px 72px; border-bottom: 1px solid var(--line); font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }
+  .sub-row .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sub-row .c { color: var(--muted); text-align: right; }
+  .sub-row .tag { justify-self: end; }
+  .sub-row.off .nm { color: var(--faint); text-decoration: line-through; text-decoration-thickness: 1px; }
+  @media (hover: hover) { .sub-row:hover .tag { border-color: var(--fg); color: var(--fg); } }
+  form.add.skip { padding-left: 72px; margin-bottom: 18px; }
+  .plain-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .plain-row span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .plain-row .btn { padding: 4px 9px; font-size: 10px; }
+  .linkish { font: inherit; background: none; border: 0; padding: 0; color: var(--fg); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+  /* Review: one find at a time. */
+  body.reviewing { height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+  body.reviewing header { flex: none; }
+  body.reviewing #view { display: none; }
+  .review { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .stage { flex: 1; min-height: 0; position: relative; background: #000; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; padding: 24px 32px 18px; cursor: pointer; }
+  .stage figure { margin: 0; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  .stage figure img { flex: 1; min-height: 0; width: 100%; object-fit: contain; display: block; }
+  .stage figcaption { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #a3a3a3; margin-top: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stage.flip { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+  .stage.flip figure { grid-area: 1 / 1; }
+  .stage.flip figure.off { visibility: hidden; }
+  .stage .back { position: absolute; top: 14px; right: 24px; border-color: #404040; color: #fafafa; display: none; }
+  .stage.flip .back { display: inline-block; }
+  .panel { flex: none; display: flex; align-items: flex-end; gap: 32px; padding: 18px 32px 22px; border-top: 1px solid var(--line); }
+  .info { flex: 1; min-width: 0; }
+  .host { font-size: 20px; font-weight: 600; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .line { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .url { text-decoration: none; display: block; }
+  .url:hover { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  .siteline { display: flex; align-items: center; gap: 10px; margin-top: 8px; color: var(--fg); }
+  .siteline .btn { padding: 5px 10px; font-size: 10px; }
+  .acts { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .choices { display: flex; gap: 8px; align-items: center; position: relative; }
+  .choices .btn { padding: 12px 16px; }
+  kbd { font: inherit; font-size: 10px; letter-spacing: 0; margin-left: 8px; padding: 0 5px; border: 1px solid currentColor; border-radius: 3px; opacity: .55; }
+  .keys { font-size: 12px; color: var(--muted); }
+  .menu { position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 20; display: grid; gap: 6px; min-width: 240px; padding: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+  .menu .btn { text-align: left; }
+  .done { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 40px 24px; max-width: 760px; margin: 0 auto; width: 100%; }
+
+  .toast { position: fixed; top: 120px; left: 50%; transform: translateX(-50%) translateY(-8px); background: var(--fg); color: var(--bg); padding: 10px 18px; border-radius: 6px; font-size: 13px; opacity: 0; transition: .2s; pointer-events: none; max-width: calc(100vw - 32px); z-index: 60; }
+  .toast.show { opacity: 1; transform: translateX(-50%); pointer-events: auto; }
+  .toast .undo { font: inherit; font-weight: 600; margin-left: 14px; background: none; border: 0; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0; }
+
+  @media (max-width: 900px) {
+    .bar { padding: 12px 16px 4px; gap: 10px; }
+    .tabs { padding: 0 4px; gap: 2px; }
+    .tabs a { padding: 8px 10px; }
+    .wrap { padding: 0 16px; }
+    .hide-sm, .scan { display: none; }
+    .show-sm { display: inline; }
+    .bar .btn.only-review { padding: 7px 10px; font-size: 10px; }
+    .hero { padding: 28px 0 24px; }
+    .go { width: 100%; text-align: center; }
+    .tags .tag:not(.urgent):not(.strong):not(.keep) { display: none; }
+    .cols { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .sub-row { grid-template-columns: minmax(0, 1fr) 56px 76px; padding-left: 0; }
+    .sub-row .track { display: none; }
+    form.add.skip { padding-left: 0; }
+    .stage { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; padding: 12px 12px 10px; }
+    .stage figcaption { margin-top: 6px; }
+    .stage .back { top: 10px; right: 12px; }
+    .panel { flex-direction: column; align-items: stretch; gap: 12px; padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
+    .host { font-size: 17px; }
+    .acts { align-items: stretch; }
+    .choices { display: grid; grid-template-columns: 1fr 1fr; }
+    .choices .btn { width: 100%; text-align: center; padding: 13px 10px; }
+    .choices .more { grid-column: 1 / -1; padding: 8px 10px; }
+    .menu { left: 0; right: 0; }
+    kbd, .keys { display: none; }
+  }
+</style>
+</head>
+<body>
+<header id="top">
+  <div class="bar">
+    <a class="logo" href="#review"><b>PHOTO</b><span>WATCH</span></a>
+    <span class="spacer"></span>
+    <span class="status scan" id="status"></span>
+    <span class="status only-review" id="count"></span>
+    <button class="btn ghost only-review" type="button" data-act="close">Close</button>
+  </div>
+  <nav class="tabs" id="tabs">
+    <a href="#review" data-tab="review">Review<span class="n" id="nOpen"></span></a>
+    <a href="#archive" data-tab="archive">Archive</a>
+    <a href="#status" data-tab="status">Status</a>
+    <a href="#settings" data-tab="settings">Settings</a>
+  </nav>
+</header>
+
+<main id="view"><div class="wrap"><section class="hero"><div class="label">Loading</div></section></div></main>
+
+<section class="review" id="review" hidden>
+  <div class="stage" id="stage" title="Tap or press space to switch">
+    <figure id="ownFig"><img id="own" alt="Your photo"><figcaption id="ownCap">Your photo</figcaption></figure>
+    <figure id="findFig"><img id="find" alt="Found image"><figcaption id="findCap">Found</figcaption></figure>
+    <button class="btn ghost back" id="back" type="button">Side by side</button>
+  </div>
+  <div class="panel" id="panel">
+    <div class="info">
+      <div class="host" id="host"></div>
+      <div class="line" id="title"></div>
+      <a class="line url" id="url" target="_blank" rel="noopener noreferrer"></a>
+      <div class="line" id="meta"></div>
+      <div class="line siteline" id="siteline" hidden></div>
+    </div>
+    <div class="acts">
+      <div class="choices">
+        <button class="btn" type="button" data-choice="ok">Allowed<kbd>1</kbd></button>
+        <button class="btn" type="button" data-choice="notmine">Not my photo<kbd>2</kbd></button>
+        <button class="btn" type="button" data-choice="ignored">Ignore<kbd>3</kbd></button>
+        <button class="btn" type="button" data-choice="action" id="fourth">Action needed<kbd>4</kbd></button>
+        <button class="btn ghost more" type="button" id="moreBtn" aria-expanded="false">More</button>
+        <div class="menu" id="menu" hidden></div>
+      </div>
+      <div class="keys">1-4 choose · ← → browse · space switch · Z undo · Esc close</div>
+    </div>
+  </div>
+  <div class="done" id="done" hidden></div>
+</section>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const LOCALE = "en-GB";
+const JSON_HEADERS = { "content-type": "application/json" };
+const SRC = { data: "/api/data", ownSmall: id => `/img/photo/${id}?w=200`, own: id => `/img/photo/${id}?w=1600`, find: id => `/img/find/${id}` };
+
+const LABEL = { open: "To review", action: "Action needed", ok: "Allowed", notmine: "Not my photo", done: "Resolved", ignored: "Ignored" };
+const CHOICE = { ok: "Allowed", notmine: "Not my photo", ignored: "Ignore", action: "Action needed", done: "Resolved", open: "Back to review" };
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const TABS = ["review", "archive", "status", "settings"];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const nf = n => (n ?? 0).toLocaleString(LOCALE);
+const day = iso => { const d = new Date(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
+const clock = iso => new Date(iso).toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit" });
+const isNew = f => Date.now() - new Date(f.first_seen).getTime() < 36 * 3600e3;
+const pct = (a, b) => b ? Math.round((a / b) * 1000) / 10 : 0;
+const onHost = (f, host) => f.host === host || !!f.host?.endsWith("." + host);
+const plural = (n, one, many) => `${nf(n)} ${n === 1 ? one : many}`;
+
+let data = null;   // /api/data
+let cfg = null;    // /api/settings
+let folders = null; // /api/folders, loaded with the Settings tab
+let tab = "review";
+let q = "";
+let shown = 80;
+const undoStack = [];
+// Reviewing: a fixed list (queue, action needed or archive) and what was decided in this round.
+const rv = { list: [], pos: 0, flip: null, decided: new Set(), mode: "queue", done: false };
+
+function ago(iso) {
+  if (!iso) return "";
+  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m} min ago`;
+  const h = Math.round(m / 60);
+  return h < 24 ? `${h} h ago` : plural(Math.round(h / 24), "day ago", "days ago");
+}
+
+/** Name and date of a shoot from its folder: "2025-04-22_Spring_Tour" → "Spring · Tour", "22 Apr 2025". */
+function shootInfo(f) {
+  const seg = (f.shoot || "").split("/").pop() || "";
+  const m = /^(\d{4})-?(\d{2})(?:-?(\d{2}))?[ _-]*(.*)$/.exec(seg);
+  if (!m || +m[2] < 1 || +m[2] > 12) return { name: seg.replace(/_+/g, " "), date: "" };
+  const name = (m[4] || "").replace(/_/g, " · ").replace(/-/g, " ").trim() || seg;
+  return { name, date: m[3] ? `${+m[3]} ${MONTHS[+m[2] - 1]} ${m[1]}` : `${MONTHS[+m[2] - 1]} ${m[1]}` };
+}
+
+function prettyUrl(u) {
+  try { const x = new URL(u); return (x.hostname.replace(/^www\./, "") + decodeURIComponent(x.pathname) + x.search).replace(/\/$/, ""); }
+  catch { return u; }
+}
+
+const openFinds = () => data.finds.filter(f => f.status === "open");
+const actionFinds = () => data.finds.filter(f => f.status === "action");
+const archived = () => data.finds.filter(f => ["ok", "notmine", "done", "ignored"].includes(f.status));
+const paused = () => data.captchaUntil && new Date(data.captchaUntil) > new Date();
+
+async function getJson(url) {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`${url}: ${res.status}`);
+  return res.json();
+}
+
+async function send(url, body, method = "POST") {
+  const res = await fetch(url, { method, headers: JSON_HEADERS, body: JSON.stringify(body ?? {}) });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(out.error || "Saving failed, please try again");
+  return out;
+}
+
+async function load() {
+  try {
+    [data, cfg] = await Promise.all([getJson(SRC.data), getJson("/api/settings")]);
+  } catch {
+    $("view").innerHTML = `<div class="wrap"><section class="hero"><h1 class="headline">Photowatch does not load</h1><p class="briefing">The data did not come in. Is the app still running? Reload the page in a minute.</p></section></div>`;
+    return;
+  }
+  route();
+  pollJob();
+}
+
+/** Fresh data after a job, without disturbing what you are doing. */
+async function reload() {
+  try { data = await getJson(SRC.data); } catch { return; }
+  if (tab === "settings") return loadFolders();
+  if (!$("review").hidden || document.activeElement?.matches("input, textarea")) return updateHeader();
+  render();
+}
+
+function route() {
+  const h = location.hash.slice(1);
+  tab = TABS.includes(h) ? h : "review";
+  if (tab === "settings") folders = null;
+  render();
+  if (tab === "settings") loadFolders();
+}
+
+function updateHeader() {
+  const open = openFinds(), act = actionFinds();
+  $("nOpen").textContent = open.length + act.length ? String(open.length + act.length) : "";
+  $("status").textContent = data.job ? jobShort(data.job) : data.stats.lastScanAt ? `searched ${ago(data.stats.lastScanAt)}` : "";
+}
+
+function render() {
+  document.querySelectorAll(".tabs a").forEach(a => a.classList.toggle("on", a.dataset.tab === tab));
+  updateHeader();
+  if (tab === "archive") { $("view").innerHTML = archiveHtml(); $("q").value = q; renderArchiveList(); }
+  else if (tab === "status") $("view").innerHTML = statusHtml();
+  else if (tab === "settings") $("view").innerHTML = settingsHtml();
+  else $("view").innerHTML = reviewHtml(openFinds(), actionFinds());
+}
+
+/* ---------- Jobs: reading folders, searching, the night run ---------- */
+
+const PHASE = { "Reading folders": "Reading folders", "Fingerprinting photos": "Fingerprinting", "Grouping series": "Grouping series", "Searching": "Searching" };
+
+function jobShort(j) {
+  if (j.elsewhere) return "busy in another window";
+  const p = PHASE[j.phase] || j.phase;
+  if (j.total) return `${p} ${nf(j.done + 1 > j.total ? j.total : j.done + 1)}/${nf(j.total)}`;
+  return j.done ? `${p} · ${nf(j.done)}` : `${p}…`;
+}
+
+const STOPPED = {
+  budget: "", deadline: "until the end of the night", captcha: "stopped: Google asked for a captcha", backoff: "paused after a captcha",
+  empty: "nothing was due", stopped: "stopped by you", unavailable: "the photo folders could not be read", "no-folders": "no photo folders yet",
+};
+
+function lastRunLine(r) {
+  if (r.error) return `Stopped with an error: ${esc(r.error)}`;
+  if (r.stoppedBy === "no-folders") return "No photo folders yet";
+  const parts = [];
+  if (r.photos !== undefined) parts.push(`${plural(r.photos, "photo", "photos")} read${r.added ? `, ${nf(r.added)} new` : ""}`);
+  if (r.scanned !== undefined) parts.push(`${nf(r.scanned)} searched · ${plural(r.newFinds ?? 0, "new find", "new finds")}${r.errors ? ` · ${plural(r.errors, "error", "errors")}` : ""}`);
+  if (r.unavailable?.length) parts.push(`not available: ${r.unavailable.map(esc).join(", ")}`);
+  const why = STOPPED[r.stoppedBy];
+  if (why) parts.push(why);
+  return parts.join(" · ") || "Done";
+}
+
+let pollTimer = null;
+async function pollJob() {
+  clearTimeout(pollTimer);
+  try {
+    const j = await getJson("/api/job");
+    const was = data.job;
+    data.job = j.job;
+    data.lastRun = j.lastRun;
+    updateHeader();
+    if (tab === "status" && $("review").hidden) $("view").innerHTML = statusHtml();
+    if (tab === "settings" && folders) $("fState").textContent = folderState();
+    if (was && !j.job) await reload();
+  } catch { /* the app restarted; try again later */ }
+  pollTimer = setTimeout(pollJob, data.job ? 2000 : 20000);
+}
+
+async function startJob(kind, count) {
+  try { await send("/api/job", { kind, count }); }
+  catch (e) { return toast(e.message); }
+  toast(kind === "scan" ? "Searching. The browser opens off-screen." : "Reading your folders");
+  setTimeout(pollJob, 300);
+}
+
+/* ---------- Review: the queue ---------- */
+
+function bySite(list) {
+  const groups = new Map();
+  for (const f of list) {
+    const k = f.host || "?";
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(f);
+  }
+  return [...groups.values()];
+}
+
+function nextNight() {
+  if (!data.night.enabled) return "The night scan is off (see Settings).";
+  const at = new Date(data.night.nextStart).toLocaleString(LOCALE, { weekday: "long", hour: "2-digit", minute: "2-digit" });
+  return data.night.inside ? `The night scan runs until ${data.night.end}, with up to ${nf(data.budget.budget)} photos.` : `Photowatch searches again on ${at}, with up to ${nf(data.budget.budget)} photos.`;
+}
+
+function reviewHtml(open, act) {
+  if (!data.configured) return `<div class="wrap"><section class="hero">
+      <div class="label">Welcome</div>
+      <h1 class="headline">Start by adding your photo folders</h1>
+      <p class="briefing">Every night Photowatch looks up your photos with Google Lens and compares each find with your original, crops included, so you only review real copies. Point it at the folders with your exported JPGs.</p>
+      <a class="btn solid go" href="#settings">Open Settings</a>
+    </section></div>`;
+
+  const groups = bySite(open);
+  const fresh = open.filter(isNew).length;
+  const today = new Date().toLocaleDateString(LOCALE, { weekday: "long", day: "numeric", month: "long" });
+  const head = open.length ? `${plural(open.length, "find", "finds")} to review` : data.finds.length ? "All reviewed" : "Nothing found yet";
+  const brief = open.length
+    ? `On ${plural(groups.length, "site", "sites")}${fresh ? `, ${nf(fresh)} new since yesterday` : ""}.`
+    : data.job ? `Photowatch is busy: ${esc(jobShort(data.job))}.`
+    : paused() ? `Google asked for a captcha, so Photowatch pauses until ${new Date(data.captchaUntil).toLocaleString(LOCALE, { weekday: "long", hour: "2-digit", minute: "2-digit" })}.`
+    : nextNight();
+  const scanned = data.stats.scanned || 0;
+  return `<div class="wrap">
+    <section class="hero">
+      <div class="label">${esc(today)}</div>
+      <h1 class="headline">${head}</h1>
+      <p class="briefing">${brief}</p>
+      ${open.length ? `<button class="btn solid go" type="button" data-act="start">Review</button>`
+        : !scanned && !data.job && !paused() ? `<button class="btn go" type="button" data-act="scan">Search 10 photos now</button>` : ""}
+    </section>
+    ${act.length ? `<div class="group"><div class="group-head"><h2>Action needed</h2><span class="n">${act.length}</span></div>${act.map(f => rowHtml([f], "action")).join("")}</div>` : ""}
+    ${groups.length ? `<div class="list">${groups.map(g => rowHtml(g, "queue")).join("")}</div>` : ""}
+  </div>`;
+}
+
+function rowHtml(g, kind) {
+  const f = g[0];
+  const n = g.length;
+  const shoots = [...new Set(g.map(x => shootInfo(x).name))];
+  const sub = n > 1
+    ? `${plural(n, "find", "finds")} · ${shoots.slice(0, 2).join(", ")}${shoots.length > 2 ? " and more" : ""}`
+    : `${shootInfo(f).name} · ${f.title || ""}`;
+  const tags = [
+    kind === "queue" && g.some(isNew) ? `<span class="tag urgent">New</span>` : "",
+    kind === "action" ? `<span class="tag strong">Action needed</span>` : "",
+    n === 1 ? `<span class="tag">${f.similarity != null ? f.similarity + "%" : "?"}</span>` : "",
+    n > 1 ? `<button class="btn ghost" type="button" data-act="allok" data-host="${esc(f.host)}">Allow all<span class="hide-sm"> ${n}</span></button>` : "",
+  ].join("");
+  return `<div class="row" data-open="${f.id}" data-kind="${kind}">
+    <div class="thumbs"><img class="thumb" loading="lazy" src="${SRC.ownSmall(f.photo_id)}" alt="" onerror="this.style.visibility='hidden'"><img class="thumb" loading="lazy" src="${SRC.find(f.id)}" alt="" onerror="this.style.visibility='hidden'"></div>
+    <div class="body"><div class="title">${esc(f.host)}</div><div class="sub">${esc(sub)}</div></div>
+    <div class="tags">${tags}</div>
+  </div>`;
+}
+
+/* ---------- Archive ---------- */
+
+function archiveHtml() {
+  return `<div class="wrap page">
+    <form class="add" onsubmit="return false"><span class="plus">⌕</span><input id="q" placeholder="Search by site, title, shoot or choice" autocomplete="off">
+      <button class="btn ghost hide-sm" type="button" data-act="links">Copy links</button><button class="btn ghost hide-sm" type="button" data-act="csv">CSV</button></form>
+    <div class="count" id="acount"></div>
+    <div id="alist"></div>
+  </div>`;
+}
+
+function archiveList() {
+  const t = q.trim().toLowerCase();
+  return archived()
+    .filter(f => !t || [f.host, f.title, f.path, f.url, LABEL[f.status]].some(s => (s ?? "").toLowerCase().includes(t)))
+    .sort((a, b) => (b.status_at || b.first_seen).localeCompare(a.status_at || a.first_seen));
+}
+
+function renderArchiveList() {
+  const list = archiveList();
+  $("acount").textContent = `${plural(list.length, "find", "finds")}${q.trim() ? ` for "${q.trim()}"` : ""}, latest choice first`;
+  $("alist").innerHTML = list.length
+    ? `<div class="list" style="margin-bottom:0">${list.slice(0, shown).map(archRowHtml).join("")}</div>` +
+      (list.length > shown ? `<button class="btn ghost more-rows" type="button" data-act="more-rows">Show more (${nf(list.length - shown)})</button>` : "")
+    : `<div class="empty">Nothing here yet. Finds you have reviewed end up here.</div>`;
+}
+
+function archRowHtml(f) {
+  return `<div class="row" data-open="${f.id}" data-kind="archive">
+    <img class="thumb" loading="lazy" src="${SRC.find(f.id)}" alt="" onerror="this.style.visibility='hidden'">
+    <div class="body"><div class="title">${esc(f.host)}</div><div class="sub">${esc(shootInfo(f).name)} · ${esc(f.title || "")}</div></div>
+    <div class="tags"><span class="tag keep">${LABEL[f.status]}</span><span class="date hide-sm">${day(f.status_at || f.first_seen)}</span></div>
+  </div>`;
+}
+
+/* ---------- Status ---------- */
+
+function statusHtml() {
+  const { stats, perYear, budget, captchaUntil, job, lastRun, night } = data;
+  const recent = stats.recentFrom;
+  const busy = !!job;
+  const now = job ? `${esc(jobShort(job))}${job.stopping ? " · stopping after this photo" : ""}`
+    : paused() ? `Paused after a captcha, until ${new Date(captchaUntil).toLocaleString(LOCALE, { weekday: "short", hour: "2-digit", minute: "2-digit" })}`
+    : !data.configured ? "Waiting for photo folders (see Settings)" : "Idle";
+  return `<div class="wrap page"><div class="cols">
+    <div>
+      <div class="block"><h3>Scanner<small>${busy ? "running" : "idle"}</small></h3>
+        <div class="ev"><div class="t">Now</div><div><div>${now}</div>${job?.current ? `<div class="loc">${esc(job.current)}</div>` : ""}</div></div>
+        ${lastRun ? `<div class="ev"><div class="t">Last</div><div><div>${lastRunLine(lastRun)}</div><div class="loc">${({ index: "Reading folders", scan: "Search by hand", night: "Night run" })[lastRun.kind] || ""} · ${day(lastRun.endedAt)}, ${clock(lastRun.endedAt)}</div></div></div>` : ""}
+        <div class="row-btns">${busy
+          ? (job.elsewhere ? "" : `<button class="btn" type="button" data-act="stop" ${job.stopping ? "disabled" : ""}>${job.stopping ? "Stopping…" : "Stop"}</button>`)
+          : `<button class="btn" type="button" data-act="scan" ${!data.configured || paused() ? "disabled" : ""}>Search 10 photos now</button><button class="btn ghost" type="button" data-act="index" ${data.configured ? "" : "disabled"}>Read folders now</button>`}</div>
+      </div>
+      <div class="block"><h3>Progress<small>${pct(stats.scanned, stats.reps).toLocaleString(LOCALE)}%</small></h3>
+        <div class="ev"><div class="t">Recent</div><div><div>${nf(stats.recentScanned)} of ${plural(stats.recentReps, "photo", "photos")} since ${recent}</div><div class="loc">${pct(stats.recentScanned, stats.recentReps).toLocaleString(LOCALE)}% · the newer, the more often searched again</div></div></div>
+        <div class="ev"><div class="t">All</div><div><div>${nf(stats.scanned)} of ${plural(stats.reps, "photo", "photos")}</div><div class="loc">newest first · older than 2 years: once a year again${stats.photos > stats.reps ? ` · ${nf(stats.photos - stats.reps)} near-duplicates count with their series` : ""}</div></div></div>
+        ${stats.unhashed ? `<div class="ev"><div class="t">To do</div><div><div>${plural(stats.unhashed, "photo", "photos")} not fingerprinted yet</div><div class="loc">done before each night run, at most 2 hours a night</div></div></div>` : ""}
+        <div class="ev"><div class="t">24 h</div><div><div>${nf(stats.last24h)} searched</div></div></div>
+      </div>
+      <div class="block"><h3>Tonight<small>${night.enabled ? `${esc(night.start)}-${esc(night.end)}` : "off"}</small></h3>
+        <div class="ev"><div class="t">${paused() ? "Pause" : nf(budget.budget)}</div><div>
+          <div>${paused() ? `Captcha · until ${new Date(captchaUntil).toLocaleString(LOCALE, { weekday: "short", hour: "2-digit", minute: "2-digit" })}` : "photos at most"}</div>
+          <div class="loc">The pace adapts: +50 after each week without a captcha, up to ${nf(budget.max)}; halved after a captcha</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="block"><h3>Per year</h3>
+        ${perYear.length ? perYear.map(y => `<div class="yr ${y.year >= recent ? "recent" : ""}"><span class="y">${y.year}</span>
+          <span class="track"><i style="width:${pct(y.scanned, y.reps)}%"></i></span><span class="c">${nf(y.scanned)} / ${nf(y.reps)}</span></div>`).join("")
+          : `<div class="empty">No photos yet.</div>`}
+      </div>
+    </div>
+  </div></div>`;
+}
+
+/* ---------- Settings ---------- */
+
+const seg = (key, options, current) => options.map(([value, label]) =>
+  `<button class="btn ${value === current ? "solid" : "ghost"}" type="button" data-act="set" data-key="${key}" data-value='${esc(JSON.stringify(value))}'>${esc(label)}</button>`).join("");
+
+function settingsHtml() {
+  const s = cfg.settings, m = cfg.meta;
+  const browsers = Object.entries(m.browsers);
+  return `<div class="wrap page"><div class="cols">
+    <div>
+      <div class="block"><h3>Photo folders<small id="fState">${esc(folderState())}</small></h3>
+        <div id="folders">${foldersHtml()}</div>
+        <form class="add" data-form="folder"><span class="plus">+</span><input id="newFolder" placeholder="Full path, e.g. /Users/you/Pictures/Exports" autocomplete="off" spellcheck="false">
+          ${m.platform === "darwin" ? `<button class="btn ghost" type="button" data-act="pick">Choose…</button>` : ""}<button class="btn ghost" type="submit">Add</button></form>
+        <div class="hint">Photowatch reads the JPG files in these folders and all their subfolders. Click a subfolder to skip it, or to scan it again.</div>
+      </div>
+      <div class="block"><h3>Night scan<small>${s.schedule.enabled ? `${esc(s.schedule.start)}-${esc(s.schedule.end)}` : "off"}</small></h3>
+        <div class="ev"><div class="t">Runs</div><div><div class="seg">${seg("schedule.enabled", [[true, "Every night"], [false, "Off"]], s.schedule.enabled)}</div></div></div>
+        <div class="ev"><div class="t">Time</div><div class="inline"><input class="field short" type="time" data-key="schedule.start" value="${esc(s.schedule.start)}" aria-label="Start"> to <input class="field short" type="time" data-key="schedule.end" value="${esc(s.schedule.end)}" aria-label="End"></div></div>
+        <div class="ev"><div class="t">Pace</div><div><div class="inline">at most <input class="field short" type="number" min="${m.limits.maxPerNight[0]}" max="${m.limits.maxPerNight[1]}" step="10" data-key="maxPerNight" value="${s.maxPerNight}" aria-label="Photos per night"> photos per night</div>
+          <div class="loc">It starts at 200 and goes up by 50 after each week without a captcha. After a captcha it halves and pauses for a day. A search takes about half a minute.</div></div></div>
+        <div class="hint">Photowatch has to be running at night, on a computer that stays awake.</div>
+      </div>
+    </div>
+    <div>
+      <div class="block"><h3>Your websites<small>never shown</small></h3>
+        ${s.ignoredHosts.map(h => `<div class="plain-row"><span>${esc(h)}</span><button class="btn ghost" type="button" data-act="rm-host" data-host="${esc(h)}">Remove</button></div>`).join("")}
+        <form class="add" data-form="host"><span class="plus">+</span><input id="newHost" placeholder="yourwebsite.com" autocomplete="off" spellcheck="false"><button class="btn ghost" type="submit">Add</button></form>
+        <div class="hint">Finds on these sites and their subdomains are left out: add your own website and portfolios. "Always fine" in the review screen adds a site here too.</div>
+      </div>
+      <div class="block"><h3>Matching</h3>
+        <div class="ev"><div class="t">Show</div><div><div class="inline">from <input class="field short" type="number" min="${m.limits.minSimilarity[0]}" max="${m.limits.minSimilarity[1]}" data-key="minSimilarity" value="${s.minSimilarity}" aria-label="Minimum similarity"> % similar</div>
+          <div class="loc">Each find is compared with your original, crops included. Real copies and crops score 77-96; another photo of the same subject scores 64 or less.</div></div></div>
+      </div>
+      <div class="block"><h3>Browser</h3>
+        <div class="ev"><div class="t">Use</div><div><div class="seg">${seg("browser", browsers, s.browser)}</div>
+          <div class="loc">Photowatch opens its own window, off-screen, with its own profile. Google asks headless browsers for a captcha straight away. Chrome Beta or Edge keeps it apart from the browser you use every day.</div></div></div>
+      </div>
+      <div class="block"><h3>Claim letter</h3>
+        <div class="ev"><div class="t">Name</div><div><input class="field" data-key="owner.name" value="${esc(s.owner.name)}" placeholder="Your name" autocomplete="name"></div></div>
+        <div class="ev"><div class="t">Contact</div><div><input class="field" data-key="owner.contact" value="${esc(s.owner.contact)}" placeholder="Website, email or phone"></div></div>
+        <div class="ev"><div class="t">Text</div><div><textarea class="field" data-key="claimTemplate" spellcheck="false" aria-label="Claim letter">${esc(s.claimTemplate)}</textarea>
+          <div class="loc">{date}, {url}, {file}, {name} and {contact} are filled in. "Claim letter" in the review screen copies it. <button class="linkish" type="button" data-act="reset-claim">Back to the standard text</button></div></div></div>
+      </div>
+      <div class="block"><h3>Notifications</h3>
+        <div class="ev"><div class="t">Show</div><div><div class="seg">${seg("notifications", [[true, "On"], [false, "Off"]], s.notifications)}</div>
+          <div class="loc">A system notification after new finds, or when Google asks for a captcha.</div></div></div>
+      </div>
+      <div class="hint">Saved in ${esc(m.file)}</div>
+    </div>
+  </div></div>`;
+}
+
+function folderState() {
+  const j = data.job;
+  if (j && ["Reading folders", "Fingerprinting photos", "Grouping series"].includes(j.phase)) return jobShort(j);
+  if (!folders) return "";
+  const n = folders.reduce((a, f) => a + f.photos, 0);
+  return folders.length ? plural(n, "photo", "photos") : "";
+}
+
+function foldersHtml() {
+  if (!folders) return `<div class="empty">Loading…</div>`;
+  if (!folders.length) return `<div class="empty">No folders yet. Add the folder with your exported JPGs below.</div>`;
+  return folders.map((f, i) => `<div class="folder">
+      <div class="ev"><div class="t">${f.available ? "Folder" : "Offline"}</div><div>
+        <div class="fpath">${esc(f.path)}</div>
+        <div class="loc">${f.available
+          ? `${plural(f.photos, "photo", "photos")} · ${nf(f.scanned)} of ${nf(f.reps)} searched${f.loose ? ` · ${nf(f.loose)} directly in this folder` : ""}`
+          : "Cannot be read right now (an unplugged or sleeping drive?). Its photos and finds stay."}</div>
+        <div class="row-btns"><button class="btn ghost" type="button" data-act="rm-folder" data-i="${i}">Remove</button></div>
+      </div></div>
+      ${f.subfolders.map(sf => `<div class="sub-row ${sf.excluded ? "off" : ""}" data-act="toggle-sub" data-i="${i}" data-name="${esc(sf.name)}" title="${sf.excluded ? "Click to scan this folder again" : "Click to skip this folder"}">
+        <span class="nm">${esc(sf.name)}</span>
+        <span class="track">${sf.excluded ? "" : `<i style="width:${pct(sf.scanned, sf.reps)}%"></i>`}</span>
+        <span class="c">${sf.excluded ? "" : nf(sf.photos)}</span>
+        <span class="tag ${sf.excluded ? "" : "strong"}">${sf.excluded ? "Skipped" : "Scan"}</span>
+      </div>`).join("")}
+      ${f.deeper.map(e => `<div class="sub-row off" data-act="unskip" data-i="${i}" data-name="${esc(e)}" title="Click to scan this folder again">
+        <span class="nm">${esc(e)}</span><span></span><span></span><span class="tag">Skipped</span></div>`).join("")}
+      <form class="add skip" data-form="skip" data-i="${i}"><span class="plus">−</span><input placeholder="Skip a folder deeper down, e.g. 2019/private" autocomplete="off" spellcheck="false"><button class="btn ghost" type="submit">Skip</button></form>
+    </div>`).join("");
+}
+
+async function loadFolders() {
+  try { folders = await getJson("/api/folders"); } catch { folders = []; }
+  if (tab !== "settings" || !$("folders")) return;
+  $("folders").innerHTML = foldersHtml();
+  $("fState").textContent = folderState();
+}
+
+/** Saves a change; returns false (with a message) when it was refused. */
+async function saveSettings(patch, message = "Saved") {
+  try {
+    cfg.settings = (await send("/api/settings", patch, "PUT")).settings;
+  } catch (e) {
+    toast(e.message);
+    return false;
+  }
+  if (message) toast(message);
+  return true;
+}
+
+const patchFor = (key, value) => {
+  const [a, b] = key.split(".");
+  return b ? { [a]: { [b]: value } } : { [a]: value };
+};
+
+async function changeFolders(next, message) {
+  if (!(await saveSettings({ folders: next }, message))) return false;
+  data = await getJson(SRC.data).catch(() => data);
+  await loadFolders();
+  setTimeout(pollJob, 3500); // the app starts reading the folders a few seconds after a change
+  return true;
+}
+
+async function addFolder(raw) {
+  const p = String(raw || "").trim();
+  if (!p) return toast("Type or choose the full path of a folder");
+  if (await changeFolders([...cfg.settings.folders, { path: p, exclude: [] }], "Folder added. Photowatch reads its photos now.")) {
+    const input = $("newFolder");
+    if (input) input.value = "";
+    if (!data.configured) data.configured = true;
+    render();
+    loadFolders();
+  }
+}
+
+async function pickFolder() {
+  toast("Choose a folder in the window that opens");
+  try {
+    const { path } = await send("/api/folders/pick");
+    if (path) addFolder(path);
+  } catch (e) { toast(e.message); }
+}
+
+function toggleSkip(i, name, skip) {
+  const next = structuredClone(cfg.settings.folders);
+  const ex = new Set(next[i].exclude);
+  if (skip) ex.add(name); else ex.delete(name);
+  next[i].exclude = [...ex];
+  return changeFolders(next, skip ? `${name} is skipped` : `${name} is scanned again`);
+}
+
+/* ---------- Review: one find at a time ---------- */
+
+function startReview(list, startId, mode) {
+  if (!list.length) return;
+  rv.list = list; rv.mode = mode; rv.flip = null; rv.decided = new Set(); rv.done = false;
+  rv.pos = Math.max(0, list.findIndex(f => f.id === startId));
+  document.body.classList.add("reviewing");
+  $("review").hidden = false;
+  window.scrollTo(0, 0);
+  renderReview();
+}
+
+function closeReview(rerender = true) {
+  closeMenu();
+  document.body.classList.remove("reviewing");
+  $("review").hidden = true;
+  $("count").textContent = "";
+  if (rerender) render();
+}
+
+function preload(i) {
+  const f = rv.list[i];
+  if (!f) return;
+  new Image().src = SRC.own(f.photo_id);
+  new Image().src = SRC.find(f.id);
+}
+
+function renderReview() {
+  closeMenu();
+  const L = rv.list;
+  rv.done = !L.length || L.every(f => rv.decided.has(f.id));
+  $("stage").hidden = $("panel").hidden = rv.done;
+  $("done").hidden = !rv.done;
+  if (rv.done) return renderDone();
+
+  const f = L[rv.pos];
+  const s = shootInfo(f);
+  $("count").innerHTML = `${rv.pos + 1}<span class="hide-sm"> of </span><span class="show-sm">/</span>${L.length}`;
+  $("own").src = SRC.own(f.photo_id);
+  $("find").src = SRC.find(f.id);
+  $("ownCap").textContent = `Your photo · ${s.name}${s.date ? " · " + s.date : ""}`;
+  $("findCap").textContent = `Found · ${f.similarity != null ? f.similarity + "% similar" : "cannot be compared"}`;
+  $("stage").classList.toggle("flip", !!rv.flip);
+  $("ownFig").classList.toggle("off", rv.flip === "find");
+  $("findFig").classList.toggle("off", rv.flip === "own");
+
+  $("host").textContent = f.host || "";
+  $("title").textContent = f.title || "";
+  $("url").href = f.url;
+  $("url").textContent = `${prettyUrl(f.url)} ↗`;
+  $("meta").textContent = `Found ${day(f.first_seen)} · ${f.file}${f.series ? ` · and ${plural(f.series, "near-duplicate", "near-duplicates")}` : ""}${f.status !== "open" ? ` · now: ${LABEL[f.status]}` : ""}`;
+
+  // Button 4: something that already needs action becomes Resolved.
+  const fourth = f.status === "action" || f.status === "done" ? "done" : "action";
+  $("fourth").dataset.choice = fourth;
+  $("fourth").firstChild.textContent = CHOICE[fourth];
+  document.querySelectorAll("[data-choice]").forEach(b => b.classList.toggle("solid", b.dataset.choice === f.status));
+
+  // A whole site at once (only in the queue).
+  const same = rv.mode === "queue" ? L.filter(x => x.host === f.host && x.status === "open" && !rv.decided.has(x.id)) : [];
+  $("siteline").hidden = same.length < 2;
+  if (same.length > 1) $("siteline").innerHTML = `${nf(same.length)} more on ${esc(f.host)} <button class="btn ghost" type="button" data-act="site-ok" data-host="${esc(f.host)}">Allow all ${same.length}</button>`;
+
+  $("menu").innerHTML = [
+    `<button class="btn ghost" type="button" data-more="copy">Copy link</button>`,
+    `<button class="btn ghost" type="button" data-more="claim">Claim letter</button>`,
+    `<button class="btn ghost" type="button" data-more="host">${esc(f.host)} always fine</button>`,
+    f.status !== "open" ? `<button class="btn ghost" type="button" data-more="reopen">Back to review</button>` : "",
+    `<button class="btn ghost" type="button" data-more="reveal">${data.platform === "darwin" ? "Show in Finder" : "Show in folder"}</button>`,
+  ].join("");
+
+  preload(rv.pos + 1);
+  preload(rv.pos + 2);
+}
+
+function renderDone() {
+  const tally = {};
+  for (const f of rv.list) if (rv.decided.has(f.id)) tally[f.status] = (tally[f.status] || 0) + 1;
+  const summary = Object.keys(tally).map(k => `${tally[k]} ${LABEL[k].toLowerCase()}`).join(", ");
+  $("count").textContent = "";
+  $("done").innerHTML = `<div class="label">Done</div>
+    <h1 class="headline">${rv.mode === "archive" ? "End of the list" : "All reviewed"}</h1>
+    <p class="briefing">${summary ? `This round: ${summary}.` : ""}</p>
+    <div class="row-btns"><button class="btn solid" type="button" data-act="close">Back</button></div>`;
+}
+
+const saveStatus = (id, status) => send(`/api/find/${id}/status`, { status });
+
+async function choose(status) {
+  if (rv.done || $("review").hidden) return;
+  const f = rv.list[rv.pos];
+  if (!f) return;
+  const prev = f.status;
+  if (status !== prev) {
+    try { await saveStatus(f.id, status); } catch { return toast("Saving failed, please try again"); }
+    f.status = status;
+    undoStack.push([{ id: f.id, prev }]);
+  }
+  rv.decided.add(f.id);
+  advance();
+  if (status !== prev) toast(CHOICE[status], undo);
+}
+
+function advance() {
+  const L = rv.list;
+  rv.flip = null;
+  for (let i = rv.pos + 1; i < L.length; i++) if (!rv.decided.has(L[i].id)) { rv.pos = i; return renderReview(); }
+  for (let i = 0; i < rv.pos; i++) if (!rv.decided.has(L[i].id)) { rv.pos = i; return renderReview(); }
+  renderReview();
+}
+
+async function undo() {
+  const step = undoStack.pop();
+  if (!step) return;
+  try { for (const { id, prev } of step) await saveStatus(id, prev); }
+  catch { undoStack.push(step); return toast("Undo failed, please try again"); }
+  for (const { id, prev } of step) {
+    const f = data.finds.find(x => x.id === id);
+    if (f) f.status = prev;
+    rv.decided.delete(id);
+  }
+  if (!$("review").hidden) {
+    const i = rv.list.findIndex(f => f.id === step[0].id);
+    if (i >= 0) rv.pos = i;
+    rv.flip = null;
+    renderReview();
+  } else render();
+  toast(step.length > 1 ? `${step.length} undone` : "Undone");
+}
+
+// Allow every open find on one site, with a single undo.
+async function allowSite(host, list) {
+  const items = list.filter(x => x.host === host && x.status === "open" && !rv.decided.has(x.id));
+  if (!items.length) return;
+  const step = [];
+  for (const x of items) {
+    try { await saveStatus(x.id, "ok"); } catch { if (step.length) undoStack.push(step); return toast("Saving failed, please try again"); }
+    step.push({ id: x.id, prev: x.status });
+    x.status = "ok";
+    if (!$("review").hidden) rv.decided.add(x.id);
+  }
+  undoStack.push(step);
+  if (!$("review").hidden) advance(); else render();
+  toast(`${step.length} allowed on ${host}`, undo);
+}
+
+// "Always fine": the site goes on the list in Settings and never comes back in the queue.
+async function trustHost(host) {
+  if (!confirm(`${host} is always fine: finds on this site will not show up any more. You can undo this in Settings. Continue?`)) return;
+  try { await send("/api/ignore", { host }); } catch (e) { return toast(e.message); }
+  if (!cfg.settings.ignoredHosts.includes(host)) cfg.settings.ignoredHosts.push(host);
+  data.finds = data.finds.filter(f => !onHost(f, host));
+  if (!$("review").hidden) {
+    const cur = rv.list[rv.pos];
+    rv.list = rv.list.filter(f => !onHost(f, host));
+    if (!rv.list.length) return closeReview();
+    const i = cur ? rv.list.findIndex(f => f.id === cur.id) : -1;
+    rv.pos = i >= 0 ? i : Math.min(rv.pos, rv.list.length - 1);
+    if (rv.decided.has(rv.list[rv.pos].id)) return advance();
+    renderReview();
+  } else render();
+  toast(`${host} is now always fine`);
+}
+
+function go(step) {
+  const n = rv.pos + step;
+  if (n < 0 || n >= rv.list.length) return;
+  rv.pos = n; rv.flip = null; renderReview();
+}
+
+function toggleFlip() {
+  if (rv.done || $("review").hidden) return;
+  rv.flip = rv.flip === "own" ? "find" : "own";
+  renderReview();
+}
+
+function closeMenu() { $("menu").hidden = true; $("moreBtn").setAttribute("aria-expanded", "false"); }
+
+function more(kind) {
+  const f = rv.list[rv.pos];
+  closeMenu();
+  if (!f) return;
+  if (kind === "copy") return copyText(f.url, "Link copied");
+  if (kind === "claim") return copyText(claim(f), cfg.settings.owner.name ? "Claim letter copied" : "Claim letter copied. Add your name in Settings.");
+  if (kind === "host") return trustHost(f.host);
+  if (kind === "reopen") return choose("open");
+  if (kind === "reveal") return send(`/api/reveal/${f.photo_id}`).then(() => toast(data.platform === "darwin" ? "Shown in Finder" : "Folder opened"), e => toast(e.message));
+}
+
+function openRow(id, kind) {
+  if (kind === "action") return startReview(actionFinds(), id, "action");
+  if (kind === "archive") return startReview(archiveList(), id, "archive");
+  const open = openFinds();
+  const f = open.find(x => x.id === id);
+  if (!f) return;
+  // First the finds on this site, then the rest of the queue.
+  return startReview([...open.filter(x => x.host === f.host), ...open.filter(x => x.host !== f.host)], id, "queue");
+}
+
+/* ---------- Copy, CSV, claim letter ---------- */
+
+function copyText(text, ok) {
+  navigator.clipboard.writeText(text).then(() => toast(ok), () => toast("Copying did not work"));
+}
+
+function copyAllLinks() {
+  const urls = [...new Set(archiveList().filter(f => f.status !== "ignored").map(f => f.url))];
+  if (!urls.length) return toast("No links");
+  copyText(urls.join("\n"), `${plural(urls.length, "link", "links")} copied`);
+}
+
+function downloadCsv() {
+  const rows = archiveList();
+  if (!rows.length) return toast("No finds");
+  const cell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const head = ["link", "site", "title", "similarity", "status", "found", "last seen", "photo"];
+  const lines = rows.map(f => [f.url, f.host, f.title, f.similarity ?? "", LABEL[f.status], f.first_seen.slice(0, 10), f.last_seen.slice(0, 10), f.path].map(cell).join(","));
+  const blob = new Blob(["﻿" + [head.map(cell).join(","), ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `photowatch-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+}
+
+function claim(f) {
+  const { owner, claimTemplate } = cfg.settings;
+  const fill = { date: day(new Date().toISOString()), url: f.url, file: f.file, name: owner.name || "[your name]", contact: owner.contact };
+  return claimTemplate.replace(/\{(date|url|file|name|contact)\}/g, (_, k) => fill[k]).replace(/\n+$/, "");
+}
+
+function toast(msg, undoFn = null) {
+  const t = $("toast");
+  t.textContent = msg;
+  if (undoFn) {
+    const b = document.createElement("button");
+    b.className = "undo"; b.type = "button"; b.textContent = "Undo";
+    b.onclick = () => { t.classList.remove("show"); undoFn(); };
+    t.appendChild(b);
+  }
+  t.style.top = `${$("top").offsetHeight + 12}px`;
+  t.classList.add("show");
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), undoFn ? 5000 : 2600);
+}
+
+/* ---------- Controls ---------- */
+
+document.addEventListener("click", async e => {
+  const t = e.target;
+  const act = t.closest("[data-act]");
+  if (act) {
+    const a = act.dataset.act;
+    if (a === "start") return startReview(openFinds(), null, "queue");
+    if (a === "allok") return allowSite(act.dataset.host, openFinds());
+    if (a === "site-ok") return allowSite(act.dataset.host, rv.list);
+    if (a === "close") return closeReview();
+    if (a === "links") return copyAllLinks();
+    if (a === "csv") return downloadCsv();
+    if (a === "more-rows") { shown += 200; return renderArchiveList(); }
+    if (a === "scan") return startJob("scan", 10);
+    if (a === "index") return startJob("index");
+    if (a === "stop") { await send("/api/job/stop").catch(() => {}); toast("Stopping after the current photo"); return pollJob(); }
+    if (a === "pick") return pickFolder();
+    if (a === "set") {
+      if (await saveSettings(patchFor(act.dataset.key, JSON.parse(act.dataset.value)))) { data = await getJson(SRC.data).catch(() => data); render(); loadFolders(); }
+      return;
+    }
+    if (a === "rm-folder") {
+      const f = cfg.settings.folders[+act.dataset.i];
+      if (!f || !confirm(`Stop scanning ${f.path}? Finds you already have stay in the archive.`)) return;
+      if (await changeFolders(cfg.settings.folders.filter((_, i) => i !== +act.dataset.i), "Folder removed")) render(), loadFolders();
+      return;
+    }
+    if (a === "toggle-sub") {
+      const f = cfg.settings.folders[+act.dataset.i];
+      return f && toggleSkip(+act.dataset.i, act.dataset.name, !f.exclude.includes(act.dataset.name));
+    }
+    if (a === "unskip") return toggleSkip(+act.dataset.i, act.dataset.name, false);
+    if (a === "rm-host") {
+      const host = act.dataset.host;
+      if (await saveSettings({ ignoredHosts: cfg.settings.ignoredHosts.filter(h => h !== host) }, `${host} shows up again`)) { data = await getJson(SRC.data).catch(() => data); render(); loadFolders(); }
+      return;
+    }
+    if (a === "reset-claim") {
+      if (await saveSettings({ claimTemplate: cfg.meta.defaultClaim }, "Standard text back")) render(), loadFolders();
+      return;
+    }
+  }
+  const c = t.closest("[data-choice]");
+  if (c) { c.blur(); return choose(c.dataset.choice); }
+  const m = t.closest("[data-more]");
+  if (m) { m.blur(); return more(m.dataset.more); }
+  if (t.closest("#moreBtn")) {
+    const menu = $("menu");
+    menu.hidden = !menu.hidden;
+    $("moreBtn").setAttribute("aria-expanded", String(!menu.hidden));
+    return;
+  }
+  if (!t.closest("#menu")) closeMenu();
+  if (t.closest("#back")) { rv.flip = null; return renderReview(); }
+  if (t.closest("#stage")) return toggleFlip();
+  const row = t.closest("[data-open]");
+  if (row && !t.closest("a, button")) return openRow(Number(row.dataset.open), row.dataset.kind);
+});
+
+document.addEventListener("submit", async e => {
+  const form = e.target.closest("form[data-form]");
+  if (!form) return;
+  e.preventDefault();
+  const input = form.querySelector("input");
+  const kind = form.dataset.form;
+  if (kind === "folder") return addFolder(input.value);
+  if (kind === "host") {
+    const host = input.value.trim();
+    if (!host) return;
+    if (await saveSettings({ ignoredHosts: [...cfg.settings.ignoredHosts, host] }, "Added")) { data = await getJson(SRC.data).catch(() => data); render(); loadFolders(); $("newHost")?.focus(); }
+    return;
+  }
+  if (kind === "skip") {
+    const name = input.value.trim();
+    if (name && await toggleSkip(+form.dataset.i, name, true)) input.value = "";
+  }
+});
+
+// Text, number and time fields save when you leave them (or press Enter).
+document.addEventListener("change", async e => {
+  const el = e.target.closest(".field[data-key]");
+  if (!el) return;
+  const value = el.type === "number" ? Number(el.value) : el.value;
+  if (!(await saveSettings(patchFor(el.dataset.key, value)))) {
+    const [a, b] = el.dataset.key.split(".");
+    el.value = b ? cfg.settings[a][b] : cfg.settings[a]; // back to what is saved
+    return;
+  }
+  if (el.dataset.key.startsWith("schedule") || el.dataset.key === "maxPerNight" || el.dataset.key === "minSimilarity") data = await getJson(SRC.data).catch(() => data);
+  updateHeader();
+});
+
+document.addEventListener("input", e => {
+  if (e.target.id === "q") { q = e.target.value; shown = 80; renderArchiveList(); }
+});
+
+document.addEventListener("keydown", e => {
+  if (e.target.closest("input, textarea")) {
+    if (e.key === "Escape") e.target.blur();
+    if (e.key === "Enter" && e.target.matches(".field:not(textarea)")) e.target.blur();
+    return;
+  }
+  if (e.metaKey || e.ctrlKey) {
+    if (e.key.toLowerCase() === "z" && undoStack.length) { e.preventDefault(); undo(); }
+    return;
+  }
+  if (e.altKey || $("review").hidden) return;
+  const k = e.key;
+  if (k === "Escape") {
+    e.preventDefault();
+    if (!$("menu").hidden) return closeMenu();
+    if (rv.flip) { rv.flip = null; return renderReview(); }
+    return closeReview();
+  }
+  if (rv.done) return;
+  if (k >= "1" && k <= "4") { e.preventDefault(); choose(document.querySelectorAll("[data-choice]")[Number(k) - 1].dataset.choice); }
+  else if (k === "ArrowRight") { e.preventDefault(); go(1); }
+  else if (k === "ArrowLeft") { e.preventDefault(); go(-1); }
+  else if (k === " ") { e.preventDefault(); toggleFlip(); }
+  else if (k === "z" || k === "Z") undo();
+});
+
+window.addEventListener("hashchange", () => { if (!$("review").hidden) closeReview(false); route(); });
+
+load();
+</script>
+</body>
+</html>
