@@ -44,11 +44,11 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.photowatch.plist
 
 Make sure the Mac does not sleep at night (System Settings → Energy).
 
-If your photos are on a network or external drive, macOS may block a background process from reading them. Give the `node` binary (`which node`) access under System Settings → Privacy & Security → Full Disk Access. Photowatch tells you on the Settings screen when it cannot read a folder, and it never treats an unreachable drive as "photos gone".
+If your photos are on a network or external drive, macOS may block a background process from reading them. Give the `node` binary (`which node`) access under System Settings → Privacy & Security → Full Disk Access. That permission belongs to that exact binary, so check it again after you upgrade Node. Photowatch tells you on the Settings screen when it cannot read a folder, and it never treats an unreachable drive as "photos gone".
 
 **Linux** (not tested). Run `npm start` as a systemd user service in your desktop session. The browser needs a display; on a machine without one, start it under `xvfb-run`.
 
-**Cron instead.** Turn the night scan off in Settings and run `npm run nightly` from cron at the start of your night window. The app and the command line never search at the same time.
+**Cron instead.** Turn the night scan off in Settings and run `npm run nightly` from cron at the start of your night window. The app and the command line never search at the same time. A cron job runs outside your desktop session, so the browser window may not be able to open: on macOS a launch agent is the safer choice, on Linux run the command under `xvfb-run`.
 
 ## On your phone
 
@@ -70,11 +70,38 @@ npm run nightly                            one night run now (for cron)
 npm run status                             progress and the settings file
 ```
 
+## Configuration
+
+Everything you change under **Settings** is saved in one file, `data/settings.json`. You can also write that file yourself, for example to set up a machine over SSH. Start from [`examples/settings.example.json`](examples/settings.example.json):
+
+```bash
+mkdir -p data
+cp examples/settings.example.json data/settings.json
+```
+
+| Key | Default | |
+| --- | --- | --- |
+| `folders` | none | photo folders: `path` (a full path, or one starting with `~/`) and `exclude`, the subfolders to skip, like `2019/private` |
+| `ignoredHosts` | none | your own websites: finds on these sites and their subdomains are never shown |
+| `schedule` | `{ "enabled": true, "start": "01:15", "end": "07:00" }` | when the night scan runs, in local time; the end may be after midnight |
+| `maxPerNight` | `500` | the most searches in one night (10 to 1000); the actual pace adapts below it |
+| `minSimilarity` | `75` | finds below this similarity with your original (50 to 99) are not shown |
+| `browser` | `"chrome"` | `"chrome"`, `"chrome-beta"` or `"msedge"` |
+| `notifications` | `true` | a system notification after new finds, or when Google asks for a captcha |
+| `owner` | empty | your `name` and `contact`, for the claim letter |
+| `claimTemplate` | a standard letter | the claim letter, with `{date}`, `{url}`, `{file}`, `{name}` and `{contact}` filled in |
+
+Keys you leave out keep their default. When the file has a mistake, Photowatch names it and does not start. After you change `folders` by hand, click **Read folders now** on the Status tab (or wait for the night scan).
+
+Three environment variables set where Photowatch keeps its data and where it listens:
+
 | Variable | Default | |
 | --- | --- | --- |
 | `PHOTOWATCH_DATA_DIR` | `./data` | database, settings, browser profile, image cache |
 | `PHOTOWATCH_PORT` | `4410` | port of the app |
 | `PHOTOWATCH_ALLOWED_HOSTS` | | extra host names the app answers on, comma-separated |
+
+The data folder holds your settings, your finds and the cookies of the Photowatch browser window, so keep it to yourself (it is in `.gitignore`). The tuning that was measured once, like the starting pace of 200 a night, the pause between searches and how often a photo is searched again, is in [`src/config.ts`](src/config.ts), with a note on every value.
 
 ## How it works
 
@@ -88,10 +115,18 @@ The code is small: [`src/lens.ts`](src/lens.ts) (Google Lens), [`src/similarity.
 
 ## Good to know
 
-- Photowatch uses Google Lens the way a person would, through a browser window. It is not an official API. When Google changes its pages, searching stops working until the code is updated; when Google asks for a captcha, Photowatch stops and waits a day. Use it for your own photos, at a modest pace, and check Google's terms for yourself.
 - Lens only finds what Google has indexed. Closed groups, apps and print stay out of sight.
 - A large library takes a while: at most a few hundred photos a night, newest first.
-- The claim letter is a template, not legal advice. Edit it in Settings to fit your country and your terms.
+- Photowatch does not visit the pages it finds. It asks Google for the address behind each result; a page only opens when you click its link.
+- Photowatch reads Google's pages in English (it asks for `hl=en`), with Dutch as a fallback. If Google still answers you in another language, add those labels to `LABEL` in [`src/lens.ts`](src/lens.ts).
+
+## Responsible use
+
+- **Only for your own photos**, or photos whose rights you look after. Every photo Photowatch searches is uploaded to Google.
+- **Google Lens has no official API.** Photowatch uses it the way a person would, through a browser window. Automated use may not sit well with Google's terms of service: read them and decide for yourself. When Google changes its pages, searching stops until the code is updated.
+- **Keep the pace modest.** Google may slow you down or ask for a captcha at any time. Photowatch then stops, pauses for a day and halves its pace. A higher limit in Settings does not make Google more patient.
+- **Do not sign in to Google** in the window Photowatch opens. It has its own browser profile and needs no account.
+- **Check before you act.** A high score means the images match, not that the use is unauthorised: you may have licensed the photo, or the use may be allowed where you live. The claim letter is a template, not legal advice. Edit it in Settings to fit your country and your terms.
 
 ## Development
 
@@ -102,4 +137,4 @@ npm run typecheck
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Photowatch is made by Wouter Vellekoop.

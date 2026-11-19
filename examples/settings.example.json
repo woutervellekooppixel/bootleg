@@ -1,0 +1,12 @@
+{
+  "folders": [
+    { "path": "~/Pictures/Exports", "exclude": ["Phone backup", "2019/private"] }
+  ],
+  "ignoredHosts": ["example.com"],
+  "schedule": { "enabled": true, "start": "01:15", "end": "07:00" },
+  "maxPerNight": 500,
+  "minSimilarity": 75,
+  "browser": "chrome",
+  "notifications": true,
+  "owner": { "name": "Your Name", "contact": "you@example.com" }
+}

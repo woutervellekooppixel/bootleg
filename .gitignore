@@ -1,4 +1,8 @@
 node_modules/
+# settings, database, browser profile and image cache (PHOTOWATCH_DATA_DIR)
 data/
 *.log
 .DS_Store
+# in case you keep environment variables for a wrapper script
+.env
+.env.*
