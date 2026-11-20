@@ -1,7 +1,10 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { chromium, type BrowserContext, type Page } from "playwright";
 import sharp from "sharp";
 
-import { BROWSER_PROFILE, UPLOAD_MAX_PX } from "./config.ts";
+import { BROWSER_PROFILE, DATA_DIR, UPLOAD_MAX_PX } from "./config.ts";
 import { BROWSERS, type Browser } from "./settings.ts";
 
 export class CaptchaError extends Error {
@@ -23,7 +26,7 @@ export interface LensHit {
 const LABEL = {
   rejectCookies: /Reject all|Alles afwijzen/i,
   searchByImage: '[aria-label="Search by image"], [aria-label="Zoeken op afbeelding"]',
-  dropZone: /Drag an image here|Sleep een afbeelding hier naartoe/i,
+  dropZone: /Drag an image here|Drag (?:and drop )?an image|Drop an image here|Sleep een afbeelding hier naartoe|Sleep hier een afbeelding/i,
   exactMatches: /Exact matches|Exacte overeenkomsten/i,
 };
 
@@ -62,8 +65,44 @@ export class Lens {
     }
     this.page = this.ctx.pages()[0] ?? (await this.ctx.newPage());
     await this.page.goto("https://www.google.com/?hl=en");
+    await this.dismissConsent(6_000);
+  }
+
+  /**
+   * A new browser profile in Europe first gets Google's cookie choice, as a dialog or on
+   * consent.google.com, sometimes a moment after the page has loaded. Wait for it once when the
+   * browser opens; before each search only a quick look, so a night of searches stays fast.
+   */
+  private async dismissConsent(waitMs: number): Promise<void> {
     const consent = this.page.getByRole("button", { name: LABEL.rejectCookies }).first();
-    if (await consent.isVisible().catch(() => false)) await consent.click();
+    try {
+      if (waitMs > 0) await consent.waitFor({ state: "visible", timeout: waitMs });
+      else if (!(await consent.isVisible())) return;
+      await consent.click();
+      await this.page.waitForLoadState("domcontentloaded");
+    } catch {
+      // No cookie choice on screen: nothing to do.
+    }
+  }
+
+  /**
+   * Keeps what the browser showed when a step failed (a screenshot and the page text) in
+   * data/debug, so a changed Google page can be seen and fixed. Keeps the 20 newest.
+   */
+  private async saveDebug(reason: string): Promise<string | null> {
+    try {
+      const dir = path.join(DATA_DIR, "debug");
+      fs.mkdirSync(dir, { recursive: true });
+      const base = path.join(dir, new Date().toISOString().replace(/[:.]/g, "-"));
+      await this.page.screenshot({ path: `${base}.png` });
+      const text = await this.page.locator("body").innerText({ timeout: 5_000 }).catch(() => "");
+      fs.writeFileSync(`${base}.txt`, `${reason}\n${this.page.url()}\n\n${text.slice(0, 20_000)}`);
+      const old = fs.readdirSync(dir).filter((f) => /\.(png|txt)$/.test(f)).sort().reverse().slice(40);
+      for (const f of old) fs.rmSync(path.join(dir, f), { force: true });
+      return `${base}.png`;
+    } catch {
+      return null;
+    }
   }
 
   async close(): Promise<void> {
@@ -100,9 +139,16 @@ export class Lens {
 
     await page.goto("https://www.google.com/?hl=en");
     this.assertNoCaptcha();
+    await this.dismissConsent(0);
     await page.locator(LABEL.searchByImage).first().click();
     const zone = page.getByText(LABEL.dropZone).first();
-    await zone.waitFor({ timeout: 15_000 });
+    try {
+      await zone.waitFor({ timeout: 15_000 });
+    } catch {
+      this.assertNoCaptcha();
+      const shot = await this.saveDebug("Google Lens did not show its upload area");
+      throw new Error(`Google Lens did not show its upload area${shot ? ` (screenshot: ${shot})` : ""}`);
+    }
 
     const dt = await page.evaluateHandle((b64: string) => {
       const bin = atob(b64);
