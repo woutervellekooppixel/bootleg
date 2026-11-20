@@ -11,6 +11,7 @@ import { jobState, lastRun, startJob, startScheduler, stopJob } from "./jobs.ts"
 import { BROWSERS, DEFAULT_CLAIM, LIMITS, loadSettings, normalizeHost, saveSettings, SettingsError } from "./settings.ts";
 
 const UI_PATH = path.join(PROJECT_DIR, "ui", "index.html");
+const ICON_PATH = path.join(PROJECT_DIR, "ui", "icon.png");
 const log = (s: string) => console.log(`${new Date().toLocaleTimeString()} ${s}`);
 
 fs.mkdirSync(CACHE_DIR, { recursive: true });
@@ -124,6 +125,7 @@ const server = http.createServer(async (req, res) => {
     if (method !== "GET" && method !== "HEAD" && !writeAllowed(req)) return json(res, 403, { error: "Refused: not from the Bootleg app." });
 
     if (method === "GET" && url.pathname === "/") return send(res, 200, fs.readFileSync(UI_PATH), "text/html; charset=utf-8");
+    if (method === "GET" && url.pathname === "/icon.png") return send(res, 200, fs.readFileSync(ICON_PATH), "image/png");
 
     if (method === "GET" && url.pathname === "/api/data") return json(res, 200, data());
 
