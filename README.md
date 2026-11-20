@@ -122,6 +122,7 @@ The code is small: [`src/lens.ts`](src/lens.ts) (Google Lens), [`src/similarity.
 - A large library takes a while: at most a few hundred photos a night, newest first.
 - Bootleg does not visit the pages it finds. It asks Google for the address behind each result; a page only opens when you click its link.
 - Bootleg reads Google's pages in English (it asks for `hl=en`), with Dutch as a fallback. If Google still answers you in another language, add those labels to `LABEL` in [`src/lens.ts`](src/lens.ts).
+- When a search step fails, Bootleg keeps a screenshot and the page text in `data/debug` (the 20 newest). That shows what Google put on screen, for example a cookie choice or a changed page.
 
 ## Responsible use
 
