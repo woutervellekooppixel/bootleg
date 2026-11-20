@@ -116,7 +116,7 @@ export function jobState(): JobState | null {
   if (current) return { ...current.state, stopping: current.stop };
   const other = lockHolder();
   if (!other || other.pid === process.pid) return null;
-  return { kind: other.kind, startedAt: other.startedAt, phase: "Running in another Photowatch process", done: 0, total: 0, current: null, stopping: false, elsewhere: true };
+  return { kind: other.kind, startedAt: other.startedAt, phase: "Running in another Bootleg process", done: 0, total: 0, current: null, stopping: false, elsewhere: true };
 }
 
 export function stopJob(): boolean {
@@ -187,17 +187,17 @@ export function startJob(kind: JobKind, opts: JobOptions = {}): Promise<RunSumma
         const w = nightWindow(new Date(), sched.start, sched.end);
         if (w.inside) setState("night_done", w.key); // so the app does not run this night again
         const s = await index(Math.min(deadline, Date.now() + HASH_HOURS_PER_NIGHT * 3_600_000));
-        if (s.unavailable.length) notify("Photowatch", `Cannot read ${s.unavailable.length === 1 ? s.unavailable[0] : `${s.unavailable.length} photo folders`}.`);
+        if (s.unavailable.length) notify("Bootleg", `Cannot read ${s.unavailable.length === 1 ? s.unavailable[0] : `${s.unavailable.length} photo folders`}.`);
         if (!job.stop) {
           const budget = budgetForTonight(log);
           log(`Tonight: up to ${budget} photos`);
           const r = await runScan({ ...step("Searching"), budget, deadline, adaptive: true });
           Object.assign(summary, r);
-          if (r.stoppedBy === "captcha") notify("Photowatch", "Google asked for a captcha. Photowatch pauses for a day.");
+          if (r.stoppedBy === "captcha") notify("Bootleg", "Google asked for a captcha. Bootleg pauses for a day.");
         } else summary.stoppedBy = "stopped";
       }
 
-      if (summary.newFinds) notify("Photowatch", `${summary.newFinds} new ${summary.newFinds === 1 ? "find" : "finds"} of your photos.`);
+      if (summary.newFinds) notify("Bootleg", `${summary.newFinds} new ${summary.newFinds === 1 ? "find" : "finds"} of your photos.`);
       if (summary.scanned !== undefined)
         log(`Done: ${summary.scanned} searched, ${summary.errors} errors, ${summary.newFinds} new finds (${summary.stoppedBy})`);
       return summary;

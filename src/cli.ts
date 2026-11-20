@@ -1,4 +1,4 @@
-import { SETTINGS_PATH } from "./config.ts";
+import { DB_PATH, SETTINGS_PATH } from "./config.ts";
 import { budgetState } from "./budget.ts";
 import { db } from "./db.ts";
 import { jobState, startJob, stopJob, type JobKind, type JobOptions } from "./jobs.ts";
@@ -21,7 +21,7 @@ async function run(kind: JobKind, opts: JobOptions = {}) {
   const job = startJob(kind, { ...opts, log });
   if (!job) {
     const other = jobState();
-    console.error(`Photowatch is busy${other ? ` (${other.kind}, since ${new Date(other.startedAt).toLocaleTimeString()})` : ""}. Try again later.`);
+    console.error(`Bootleg is busy${other ? ` (${other.kind}, since ${new Date(other.startedAt).toLocaleTimeString()})` : ""}. Try again later.`);
     process.exit(2);
   }
   // Ctrl-C stops after the current photo, like the Stop button in the app.
@@ -61,6 +61,7 @@ switch (process.argv[2]) {
       )
       .get();
     console.log("Settings:", SETTINGS_PATH);
+    console.log("Database:", DB_PATH);
     console.log("Folders:", loadSettings().folders.map((f) => f.path));
     console.log("Photos:", st);
     console.log("Finds:", db.prepare("SELECT COUNT(*) finds, COUNT(DISTINCT photo_id) photos FROM finds").get());

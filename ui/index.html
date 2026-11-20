@@ -7,10 +7,10 @@
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0a">
-<meta name="apple-mobile-web-app-title" content="Photowatch">
+<meta name="apple-mobile-web-app-title" content="Bootleg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>Photowatch</title>
+<title>Bootleg</title>
 <style>
   /* Always dark, no colour: statuses differ by weight and border, not by hue. */
   :root { --bg: #0a0a0a; --fg: #fafafa; --muted: #a3a3a3; --faint: #525252; --line: #262626; --soft: #171717; color-scheme: dark; }
@@ -199,7 +199,7 @@
 <body>
 <header id="top">
   <div class="bar">
-    <a class="logo" href="#review"><b>PHOTO</b><span>WATCH</span></a>
+    <a class="logo" href="#review"><b>BOOT</b><span>LEG</span></a>
     <span class="spacer"></span>
     <span class="status scan" id="status"></span>
     <span class="status only-review" id="count"></span>
@@ -320,7 +320,7 @@ async function load() {
   try {
     [data, cfg] = await Promise.all([getJson(SRC.data), getJson("/api/settings")]);
   } catch {
-    $("view").innerHTML = `<div class="wrap"><section class="hero"><h1 class="headline">Photowatch does not load</h1><p class="briefing">The data did not come in. Is the app still running? Reload the page in a minute.</p></section></div>`;
+    $("view").innerHTML = `<div class="wrap"><section class="hero"><h1 class="headline">Bootleg does not load</h1><p class="briefing">The data did not come in. Is the app still running? Reload the page in a minute.</p></section></div>`;
     return;
   }
   route();
@@ -424,14 +424,14 @@ function bySite(list) {
 function nextNight() {
   if (!data.night.enabled) return "The night scan is off (see Settings).";
   const at = new Date(data.night.nextStart).toLocaleString(LOCALE, { weekday: "long", hour: "2-digit", minute: "2-digit" });
-  return data.night.inside ? `The night scan runs until ${data.night.end}, with up to ${nf(data.budget.budget)} photos.` : `Photowatch searches again on ${at}, with up to ${nf(data.budget.budget)} photos.`;
+  return data.night.inside ? `The night scan runs until ${data.night.end}, with up to ${nf(data.budget.budget)} photos.` : `Bootleg searches again on ${at}, with up to ${nf(data.budget.budget)} photos.`;
 }
 
 function reviewHtml(open, act) {
   if (!data.configured) return `<div class="wrap"><section class="hero">
       <div class="label">Welcome</div>
       <h1 class="headline">Start by adding your photo folders</h1>
-      <p class="briefing">Every night Photowatch looks up your photos with Google Lens and compares each find with your original, crops included, so you only review real copies. Point it at the folders with your exported JPGs.</p>
+      <p class="briefing">Every night Bootleg looks up your photos with Google Lens and compares each find with your original, crops included, so you only review real copies. Point it at the folders with your exported JPGs.</p>
       <a class="btn solid go" href="#settings">Open Settings</a>
     </section></div>`;
 
@@ -441,8 +441,8 @@ function reviewHtml(open, act) {
   const head = open.length ? `${plural(open.length, "find", "finds")} to review` : data.finds.length ? "All reviewed" : "Nothing found yet";
   const brief = open.length
     ? `On ${plural(groups.length, "site", "sites")}${fresh ? `, ${nf(fresh)} new since yesterday` : ""}.`
-    : data.job ? `Photowatch is busy: ${esc(jobShort(data.job))}.`
-    : paused() ? `Google asked for a captcha, so Photowatch pauses until ${new Date(data.captchaUntil).toLocaleString(LOCALE, { weekday: "long", hour: "2-digit", minute: "2-digit" })}.`
+    : data.job ? `Bootleg is busy: ${esc(jobShort(data.job))}.`
+    : paused() ? `Google asked for a captcha, so Bootleg pauses until ${new Date(data.captchaUntil).toLocaleString(LOCALE, { weekday: "long", hour: "2-digit", minute: "2-digit" })}.`
     : nextNight();
   const scanned = data.stats.scanned || 0;
   return `<div class="wrap">
@@ -567,14 +567,14 @@ function settingsHtml() {
         <div id="folders">${foldersHtml()}</div>
         <form class="add" data-form="folder"><span class="plus">+</span><input id="newFolder" placeholder="Full path, e.g. /Users/you/Pictures/Exports" autocomplete="off" spellcheck="false">
           ${m.platform === "darwin" ? `<button class="btn ghost" type="button" data-act="pick">Choose…</button>` : ""}<button class="btn ghost" type="submit">Add</button></form>
-        <div class="hint">Photowatch reads the JPG files in these folders and all their subfolders. Click a subfolder to skip it, or to scan it again.</div>
+        <div class="hint">Bootleg reads the JPG files in these folders and all their subfolders. Click a subfolder to skip it, or to scan it again.</div>
       </div>
       <div class="block"><h3>Night scan<small>${s.schedule.enabled ? `${esc(s.schedule.start)}-${esc(s.schedule.end)}` : "off"}</small></h3>
         <div class="ev"><div class="t">Runs</div><div><div class="seg">${seg("schedule.enabled", [[true, "Every night"], [false, "Off"]], s.schedule.enabled)}</div></div></div>
         <div class="ev"><div class="t">Time</div><div class="inline"><input class="field short" type="time" data-key="schedule.start" value="${esc(s.schedule.start)}" aria-label="Start"> to <input class="field short" type="time" data-key="schedule.end" value="${esc(s.schedule.end)}" aria-label="End"></div></div>
         <div class="ev"><div class="t">Pace</div><div><div class="inline">at most <input class="field short" type="number" min="${m.limits.maxPerNight[0]}" max="${m.limits.maxPerNight[1]}" step="10" data-key="maxPerNight" value="${s.maxPerNight}" aria-label="Photos per night"> photos per night</div>
           <div class="loc">It starts at 200 and goes up by 50 after each week without a captcha. After a captcha it halves and pauses for a day. A search takes about half a minute.</div></div></div>
-        <div class="hint">Photowatch has to be running at night, on a computer that stays awake.</div>
+        <div class="hint">Bootleg has to be running at night, on a computer that stays awake.</div>
       </div>
     </div>
     <div>
@@ -589,7 +589,7 @@ function settingsHtml() {
       </div>
       <div class="block"><h3>Browser</h3>
         <div class="ev"><div class="t">Use</div><div><div class="seg">${seg("browser", browsers, s.browser)}</div>
-          <div class="loc">Photowatch opens its own window, off-screen, with its own profile. Google asks headless browsers for a captcha straight away. Chrome Beta or Edge keeps it apart from the browser you use every day.</div></div></div>
+          <div class="loc">Bootleg opens its own window, off-screen, with its own profile. Google asks headless browsers for a captcha straight away. Chrome Beta or Edge keeps it apart from the browser you use every day.</div></div></div>
       </div>
       <div class="block"><h3>Claim letter</h3>
         <div class="ev"><div class="t">Name</div><div><input class="field" data-key="owner.name" value="${esc(s.owner.name)}" placeholder="Your name" autocomplete="name"></div></div>
@@ -672,7 +672,7 @@ async function changeFolders(next, message) {
 async function addFolder(raw) {
   const p = String(raw || "").trim();
   if (!p) return toast("Type or choose the full path of a folder");
-  if (await changeFolders([...cfg.settings.folders, { path: p, exclude: [] }], "Folder added. Photowatch reads its photos now.")) {
+  if (await changeFolders([...cfg.settings.folders, { path: p, exclude: [] }], "Folder added. Bootleg reads its photos now.")) {
     const input = $("newFolder");
     if (input) input.value = "";
     if (!data.configured) data.configured = true;
@@ -917,7 +917,7 @@ function downloadCsv() {
   const blob = new Blob(["﻿" + [head.map(cell).join(","), ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `photowatch-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `bootleg-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
 }
 

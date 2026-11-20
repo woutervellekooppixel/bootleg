@@ -19,7 +19,7 @@ const port: number = await new Promise((resolve) => {
 
 const app = spawn(process.execPath, ["--import", "tsx", "src/server.ts"], {
   cwd: root,
-  env: { ...process.env, PHOTOWATCH_DATA_DIR: dataDir, PHOTOWATCH_PORT: String(port) },
+  env: { ...process.env, BOOTLEG_DATA_DIR: dataDir, BOOTLEG_PORT: String(port) },
   stdio: ["ignore", "pipe", "inherit"],
 });
 

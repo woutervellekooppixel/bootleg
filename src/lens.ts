@@ -57,7 +57,7 @@ export class Lens {
       if (/distribution .* is not found|not found at|Executable doesn't exist/i.test(msg))
         throw new Error(`${BROWSERS[this.browser]} is not installed. Install it, or pick another browser in Settings.`);
       if (/ProcessSingleton|profile.*in use|SingletonLock/i.test(msg))
-        throw new Error("The Photowatch browser profile is in use by another window. Close it and try again.");
+        throw new Error("The Bootleg browser profile is in use by another window. Close it and try again.");
       throw e;
     }
     this.page = this.ctx.pages()[0] ?? (await this.ctx.newPage());

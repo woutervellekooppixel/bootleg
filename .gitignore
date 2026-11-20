@@ -1,5 +1,5 @@
 node_modules/
-# settings, database, browser profile and image cache (PHOTOWATCH_DATA_DIR)
+# settings, database, browser profile and image cache (BOOTLEG_DATA_DIR)
 data/
 *.log
 .DS_Store

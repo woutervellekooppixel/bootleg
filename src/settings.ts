@@ -253,7 +253,7 @@ export async function saveSettings(patch: unknown): Promise<Settings> {
     if (known.has(f.path)) continue;
     const st = await fs.promises.stat(f.path).catch(() => null);
     if (!st?.isDirectory()) throw new SettingsError(`Folder not found: ${f.path}`);
-    if (!(await folderReadable(f.path))) throw new SettingsError(`Photowatch may not read this folder: ${f.path}`);
+    if (!(await folderReadable(f.path))) throw new SettingsError(`Bootleg may not read this folder: ${f.path}`);
   }
   fs.mkdirSync(DATA_DIR, { recursive: true });
   const tmp = `${SETTINGS_PATH}.${process.pid}.tmp`;

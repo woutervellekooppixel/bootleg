@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,23 +10,41 @@ import { fileURLToPath } from "node:url";
 
 export const PROJECT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-/** Everything Photowatch writes (database, settings, browser profile, image cache) lives here. */
-export const DATA_DIR = path.resolve(process.env.PHOTOWATCH_DATA_DIR ?? path.join(PROJECT_DIR, "data"));
-export const DB_PATH = path.join(DATA_DIR, "photowatch.db");
+/**
+ * An environment variable: BOOTLEG_<name>, or else PHOTOWATCH_<name>, its name from before
+ * Photowatch was renamed to Bootleg. The new name wins; an empty value counts as not set.
+ */
+export function envVar(name: "DATA_DIR" | "PORT" | "ALLOWED_HOSTS", env: NodeJS.ProcessEnv = process.env): string | undefined {
+  return env[`BOOTLEG_${name}`] || env[`PHOTOWATCH_${name}`] || undefined;
+}
+
+/**
+ * The database in a data folder: bootleg.db, or photowatch.db when the folder comes from
+ * before the rename. That file is used as it is, so nothing is moved or searched again.
+ */
+export function databasePath(dataDir: string): string {
+  const current = path.join(dataDir, "bootleg.db");
+  const old = path.join(dataDir, "photowatch.db");
+  return !fs.existsSync(current) && fs.existsSync(old) ? old : current;
+}
+
+/** Everything Bootleg writes (database, settings, browser profile, image cache) lives here. */
+export const DATA_DIR = path.resolve(envVar("DATA_DIR") ?? path.join(PROJECT_DIR, "data"));
+export const DB_PATH = databasePath(DATA_DIR);
 export const SETTINGS_PATH = path.join(DATA_DIR, "settings.json");
 export const BROWSER_PROFILE = path.join(DATA_DIR, "browser-profile");
 export const CACHE_DIR = path.join(DATA_DIR, "cache");
 export const LOCK_PATH = path.join(DATA_DIR, "scan.lock");
 
 /** The app only listens on this machine (127.0.0.1). */
-export const PORT = Number(process.env.PHOTOWATCH_PORT ?? 4410);
+export const PORT = Number(envVar("PORT") ?? 4410);
 
 /**
  * Extra host names the app may be reached on, comma-separated, e.g. when you put it
  * behind `tailscale serve`. Requests with any other Host header are refused, which
  * stops DNS-rebinding tricks from other websites.
  */
-export const ALLOWED_HOSTS = (process.env.PHOTOWATCH_ALLOWED_HOSTS ?? "")
+export const ALLOWED_HOSTS = (envVar("ALLOWED_HOSTS") ?? "")
   .split(",")
   .map((h) => h.trim().toLowerCase())
   .filter(Boolean);

@@ -95,7 +95,7 @@ function pickFolder(): Promise<string | null> {
   return new Promise((resolve, reject) => {
     execFile(
       "osascript",
-      ["-e", "activate", "-e", 'POSIX path of (choose folder with prompt "Choose a folder with photos for Photowatch")'],
+      ["-e", "activate", "-e", 'POSIX path of (choose folder with prompt "Choose a folder with photos for Bootleg")'],
       { timeout: 10 * 60_000 },
       (err, stdout) => {
         if (err) return /-128|User canceled/i.test(String(err.message) + stdout) ? resolve(null) : reject(err);
@@ -117,11 +117,11 @@ setInterval(() => {
 
 const server = http.createServer(async (req, res) => {
   try {
-    if (!hostAllowed(req)) return send(res, 403, "Unknown host. Add it to PHOTOWATCH_ALLOWED_HOSTS to allow it.", "text/plain");
+    if (!hostAllowed(req)) return send(res, 403, "Unknown host. Add it to BOOTLEG_ALLOWED_HOSTS to allow it.", "text/plain");
     const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
     const parts = url.pathname.split("/").filter(Boolean);
     const method = req.method ?? "GET";
-    if (method !== "GET" && method !== "HEAD" && !writeAllowed(req)) return json(res, 403, { error: "Refused: not from the Photowatch app." });
+    if (method !== "GET" && method !== "HEAD" && !writeAllowed(req)) return json(res, 403, { error: "Refused: not from the Bootleg app." });
 
     if (method === "GET" && url.pathname === "/") return send(res, 200, fs.readFileSync(UI_PATH), "text/html; charset=utf-8");
 
@@ -154,7 +154,7 @@ const server = http.createServer(async (req, res) => {
       if (body.kind !== "index" && body.kind !== "scan") return json(res, 400, { error: "Unknown job." });
       const count = Math.max(1, Math.min(1000, Number(body.count) || 10));
       const run = startJob(body.kind, { count, log });
-      if (!run) return json(res, 409, { error: "Photowatch is busy. Wait until it is done, or stop it first." });
+      if (!run) return json(res, 409, { error: "Bootleg is busy. Wait until it is done, or stop it first." });
       return json(res, 202, { job: jobState() });
     }
 
@@ -201,7 +201,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, "127.0.0.1", () => {
-  log(`Photowatch: http://localhost:${PORT}`);
+  log(`Bootleg: http://localhost:${PORT}`);
   const s = loadSettings();
   if (!s.folders.length) log("No photo folders yet: open the app and add them in Settings.");
   else log(`Night run ${s.schedule.enabled ? `daily from ${s.schedule.start} to ${s.schedule.end}` : "is off"}.`);

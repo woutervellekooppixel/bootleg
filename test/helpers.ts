@@ -5,14 +5,14 @@ import sharp from "sharp";
 
 /** A fresh, empty data folder for this test file. Call before importing anything that uses the database. */
 export function useTempDataDir(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "photowatch-test-"));
-  process.env.PHOTOWATCH_DATA_DIR = dir;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bootleg-test-"));
+  process.env.BOOTLEG_DATA_DIR = dir;
   process.on("exit", () => fs.rmSync(dir, { recursive: true, force: true }));
   return dir;
 }
 
 export function tempDir(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "photowatch-lib-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bootleg-lib-"));
   process.on("exit", () => fs.rmSync(dir, { recursive: true, force: true }));
   return dir;
 }
